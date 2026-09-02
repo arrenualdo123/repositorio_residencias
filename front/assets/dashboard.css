@@ -1,0 +1,73 @@
+:root {
+    --institucional-blue: #1b396a; /* Color típico TecNM */
+    --sidebar-bg: #111827; /* Tono oscuro para el panel lateral */
+    --bg-light: #f4f7f6;
+}
+body {
+    background-color: var(--bg-light);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+/* Sidebar Styles */
+.sidebar {
+    min-height: 100vh;
+    background-color: var(--sidebar-bg);
+    color: #fff;
+    transition: all 0.3s;
+}
+.sidebar .nav-link {
+    color: #a1a1aa;
+    margin-bottom: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    background-color: var(--institucional-blue);
+    color: #fff;
+}
+.sidebar .nav-link i {
+    margin-right: 10px;
+}
+/* Topbar Styles */
+.topbar {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+/* KPI Cards */
+.kpi-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+.kpi-card:hover {
+    transform: translateY(-5px);
+}
+.icon-box {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 1.5rem;
+}
+/* Drag & Drop Area */
+.drag-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 3rem;
+    text-align: center;
+    background-color: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.drag-area:hover {
+    border-color: var(--institucional-blue);
+    background-color: #eff6ff;
+}
+.drag-area i {
+    font-size: 3rem;
+    color: var(--institucional-blue);
+}
