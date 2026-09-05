@@ -3,9 +3,15 @@ import './AuthModal.css';
 
 interface AuthModalProps {
   initialMode?: 'login' | 'register';
+  onClose?: () => void;
+  onSuccess?: (userData: {email: string; role: string }) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({
+  initialMode = 'login',
+  onClose,
+  onSuccess
+}) => {
   const [isActive, setIsActive] = useState<boolean>(initialMode === 'register');
   const [role, setRole] = useState<'estudiante' | 'externo'>('estudiante');
 
@@ -30,8 +36,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) =
 
   // Validaciones auxiliares
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isLoginEmailValid = emailRegex.test(loginEmail);
-  const isRegEmailValid = emailRegex.test(regEmail);
+
+  const validateEmail=(email: string) => {
+    if(!emailRegex.test(email))return false;
+    if(role === 'estudiante') return email.endsWith('@meridiano.edu.mx');
+    return true;
+  };
+
+  const isLoginEmailValid = validateEmail(loginEmail);
+  const isRegEmailValid = validateEmail(regEmail);
 
   // Calcular fuerza contraseña
   const getPasswordStrength = (pass: string) => {
@@ -61,7 +74,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) =
     setLoginState('loading');
     setTimeout(() => {
       setLoginState('success');
-      setTimeout(() => setLoginState('idle'), 1600);
+      setTimeout(() => {
+        onSuccess?.({email: loginEmail, role});
+        onClose?.();
+      }, 1000);
     }, 1100);
   };
 
@@ -79,7 +95,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) =
     setRegState('loading');
     setTimeout(() => {
       setRegState('success');
-      setTimeout(() => setRegState('idle'), 1600);
+      setTimeout(() =>{
+        onSuccess?.({email: regEmail, role});
+        onClose?.();
+      }, 1000);
     }, 1100);
   };
 
@@ -87,6 +106,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) =
     <div className={`auth-page-container ${isActive ? 'reg-mode' : ''}`}>
       <div className="bg-layer bg-login"></div>
       <div className="bg-layer bg-register"></div>
+
+      {/* Botón de cierre para el modal */}
+      {onClose && (
+        <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
+          ✕
+        </button>
+      )}
 
       <div className="brand-top">
         <span className="mark">M</span>Repositorio · UA Meridiano
@@ -191,7 +217,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) =
               <label>Correo</label>
               <input
                 type="email"
-                placeholder="tú@meridiano.edu.mx"
+                placeholder={role === 'estudiante' ? "tú@meridiano.edu.mx" : "tu@correo.com"}
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
                 className={regEmail ? (isRegEmailValid ? 'valid' : 'invalid') : ''}
@@ -199,7 +225,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode = 'login' }) =
               <span className={`status-icon show ${isRegEmailValid ? 'ok' : 'err'}`} style={{ opacity: regEmail ? 1 : 0 }}>
                 {isRegEmailValid ? '✓' : '!'}
               </span>
-              <div className={`hint ${regEmail && !isRegEmailValid ? 'show' : ''}`}>Correo no válido.</div>
+              <div className={`hint ${regEmail && !isRegEmailValid ? 'show' : ''}`}>
+                {role === 'estudiante' ? 'Debe ser un correo @meridiano.edu.mx válido.' : 'Correo no válido.'}
+              </div>
             </div>
 
             <div className="field pw-wrap">

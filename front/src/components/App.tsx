@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
-import { Landing } from '../src/components/landing'
-import { AuthModal } from '../src/components/AuthModal'
+import { Landing } from './Landing'
+import { AuthModal } from './AuthModal'
 
 export default function App() {
   const [authOpen, setAuthOpen] = useState(false)
@@ -17,7 +17,10 @@ export default function App() {
       />
 
       {authOpen && (
-        <AuthModal initialMode={authMode} />
+        <AuthModal
+          key={authMode}
+          initialMode={authMode}
+        />
       )}
     </>
   )
