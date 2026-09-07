@@ -115,7 +115,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       )}
 
       <div className="brand-top">
-        <span className="mark">M</span>Repositorio · UA Meridiano
+        <span className="mark">M</span>Repositorio
       </div>
 
       <div className={`auth-wrap ${isActive ? 'active' : ''}`} id="authWrap">
@@ -128,13 +128,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             
             <div className="field">
               <label>Correo</label>
-              <input
-                type="email"
-                placeholder="tú@meridiano.edu.mx"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                className={loginEmail ? (isLoginEmailValid ? 'valid' : 'invalid') : ''}
-              />
+              <input type="email" placeholder="tú@meridiano.edu.mx" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}className={loginEmail ? (isLoginEmailValid ? 'valid' : 'invalid') : ''} />
               <span className={`status-icon show ${isLoginEmailValid ? 'ok' : 'err'}`} style={{ opacity: loginEmail ? 1 : 0 }}>
                 {isLoginEmailValid ? '✓' : '!'}
               </span>
@@ -142,17 +136,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div className="field pw-wrap">
               <label>Contraseña</label>
-              <input
-                type={showLoginPass ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-              />
-              <button
-                type="button"
-                className="pw-toggle"
-                onClick={() => setShowLoginPass(!showLoginPass)}
-              >
+              <input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} />
+              <button type="button" className="pw-toggle" onClick={() => setShowLoginPass(!showLoginPass)}>
                 {showLoginPass ? '🙈' : '👁'}
               </button>
             </div>
@@ -180,10 +165,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="sub">Solo para consulta — el registro no otorga permisos de edición.</div>
 
             <div className="role-select">
-              <div
-                className={`role-opt ${role === 'estudiante' ? 'active' : ''}`}
-                onClick={() => setRole('estudiante')}
-              >
+              <div className={`role-opt ${role === 'estudiante' ? 'active' : ''}`} onClick={() => setRole('estudiante')}>
                 Estudiante
               </div>
               <div
