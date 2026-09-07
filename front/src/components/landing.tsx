@@ -56,12 +56,7 @@ export const Landing: React.FC<LandingProps> = ({ openAuth }) => {
             <span>Becas</span>
           </div>
           <div className="landing-nav-actions">
-            <button
-              type="button"
-              className="landing-login-btn"
-              aria-label="Iniciar sesión"
-              onClick={() => openAuth('login')}
-            >
+            <button type="button" className="landing-login-btn" aria-label="Iniciar sesión" onClick={() => openAuth('login')}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
               </svg>
