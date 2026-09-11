@@ -4,12 +4,14 @@ import './AuthModal.css';
 interface AuthModalProps {
   initialMode?: 'login' | 'register';
   onClose?: () => void;
+  onLoginSuccess?: (userData: { email: string; role: string }) => void;
   onSuccess?: (userData: {email: string; role: string }) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   initialMode = 'login',
   onClose,
+  onLoginSuccess,
   onSuccess
 }) => {
   const [isActive, setIsActive] = useState<boolean>(initialMode === 'register');
@@ -39,7 +41,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const validateEmail=(email: string) => {
     if(!emailRegex.test(email))return false;
-    if(role === 'estudiante') return email.endsWith('@meridiano.edu.mx');
+    if(role === 'estudiante') return email.endsWith('@lahuerta.tecmm.edu.mx');
     return true;
   };
 
@@ -75,7 +77,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setTimeout(() => {
       setLoginState('success');
       setTimeout(() => {
-        onSuccess?.({email: loginEmail, role});
+        const userData = { email: loginEmail, role };
+        onLoginSuccess?.(userData);
+        onSuccess?.(userData);
         onClose?.();
       }, 1000);
     }, 1100);
@@ -115,7 +119,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       )}
 
       <div className="brand-top">
-        <span className="mark">M</span>Repositorio
+        <span className="mark">H</span>Repositorio
       </div>
 
       <div className={`auth-wrap ${isActive ? 'active' : ''}`} id="authWrap">
@@ -128,7 +132,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             
             <div className="field">
               <label>Correo</label>
-              <input type="email" placeholder="tú@meridiano.edu.mx" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}className={loginEmail ? (isLoginEmailValid ? 'valid' : 'invalid') : ''} />
+              <input type="email" placeholder="hu@lahuerta.tecmm.edu.mx" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}className={loginEmail ? (isLoginEmailValid ? 'valid' : 'invalid') : ''} />
               <span className={`status-icon show ${isLoginEmailValid ? 'ok' : 'err'}`} style={{ opacity: loginEmail ? 1 : 0 }}>
                 {isLoginEmailValid ? '✓' : '!'}
               </span>
@@ -177,7 +181,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
             <div className="role-note">
               {role === 'estudiante'
-                ? 'Se validará con tu correo institucional (@meridiano.edu.mx).'
+                ? 'Se validará con tu correo institucional (@lahuerta.tecmm.edu.mx).'
                 : 'Cuenta de solo lectura, sin necesidad de correo institucional.'}
             </div>
 
@@ -199,7 +203,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <label>Correo</label>
               <input
                 type="email"
-                placeholder={role === 'estudiante' ? "tú@meridiano.edu.mx" : "tu@correo.com"}
+                placeholder={role === 'estudiante' ? "huXXXXXXXX@lahuerta.tecmm.edu.mx" : "tu@correo.com"}
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
                 className={regEmail ? (isRegEmailValid ? 'valid' : 'invalid') : ''}
@@ -208,7 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {isRegEmailValid ? '✓' : '!'}
               </span>
               <div className={`hint ${regEmail && !isRegEmailValid ? 'show' : ''}`}>
-                {role === 'estudiante' ? 'Debe ser un correo @meridiano.edu.mx válido.' : 'Correo no válido.'}
+                {role === 'estudiante' ? 'Debe ser un correo @lahuerta.tecmm.edu.mx.' : 'Correo no válido.'}
               </div>
             </div>
 

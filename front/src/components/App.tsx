@@ -20,6 +20,10 @@ export default function App() {
         <AuthModal
           key={authMode}
           initialMode={authMode}
+          onLoginSuccess={(userData) => {
+            localStorage.setItem('userSession', JSON.stringify(userData))
+            window.location.href = '/dashboard.html'
+          }}
         />
       )}
     </>
