@@ -5,8 +5,10 @@ interface AuthModalProps {
   initialMode?: 'login' | 'register';
   onClose?: () => void;
   onLoginSuccess?: (userData: { email: string; role: string }) => void;
-  onSuccess?: (userData: {email: string; role: string }) => void;
+  onSuccess?: (userData: { email: string; role: string }) => void;
 }
+
+const API_URL = 'http://127.0.0.1:8000/api'; // Cambia el puerto si tu php artisan serve usa otro
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   initialMode = 'login',
@@ -23,6 +25,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [loginState, setLoginState] = useState<'idle' | 'loading' | 'success'>('idle');
   const [loginShake, setLoginShake] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // Estados de inputs registro
   const [regName, setRegName] = useState('');
@@ -31,24 +34,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showRegPass, setShowRegPass] = useState(false);
   const [regState, setRegState] = useState<'idle' | 'loading' | 'success'>('idle');
   const [regShake, setRegShake] = useState(false);
+  const [regError, setRegError] = useState('');
 
   useEffect(() => {
     setIsActive(initialMode === 'register');
   }, [initialMode]);
 
-  // Validaciones auxiliares
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const validateEmail=(email: string) => {
-    if(!emailRegex.test(email))return false;
-    if(role === 'estudiante') return email.endsWith('@lahuerta.tecmm.edu.mx');
+  const validateEmail = (email: string) => {
+    if (!emailRegex.test(email)) return false;
+    if (role === 'estudiante') return email.endsWith('@lahuerta.tecmm.edu.mx');
     return true;
   };
 
   const isLoginEmailValid = validateEmail(loginEmail);
   const isRegEmailValid = validateEmail(regEmail);
 
-  // Calcular fuerza contraseña
   const getPasswordStrength = (pass: string) => {
     let score = 0;
     if (pass.length >= 8) score++;
@@ -62,10 +64,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const strengthColors = ['#ff4d63', '#ffae31', '#308fff', '#54c98f'];
   const strengthLabels = ['Muy débil', 'Débil', 'Aceptable', 'Fuerte'];
 
-  // Manejador de Login
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // --- MANEJADOR DE LOGIN CONECTADO A LARAVEL ---
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loginState !== 'idle') return;
+    setLoginError('');
 
     if (!loginEmail.trim() || !loginPass.trim() || !isLoginEmailValid) {
       setLoginShake(true);
@@ -74,36 +77,97 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     setLoginState('loading');
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: loginEmail,
+          password: loginPass,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al iniciar sesión');
+      }
+
+      // Guardar Token en localStorage para peticiones futuras
+      localStorage.setItem('auth_token', data.token);
+
       setLoginState('success');
       setTimeout(() => {
-        const userData = { email: loginEmail, role };
+        const userData = { email: data.user.email, role: data.user.role };
         onLoginSuccess?.(userData);
         onSuccess?.(userData);
         onClose?.();
       }, 1000);
-    }, 1100);
+
+    } catch (err: any) {
+      setLoginState('idle');
+      setLoginError(err.message || 'Credenciales inválidas');
+      setLoginShake(true);
+      setTimeout(() => setLoginShake(false), 500);
+    }
   };
 
-  // Manejador de Registro
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  // --- MANEJADOR DE REGISTRO CONECTADO A LARAVEL ---
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (regState !== 'idle') return;
+    setRegError('');
 
-    if (!isRegEmailValid || regPass.length < 8) {
+    if (!isRegEmailValid || regPass.length < 8 || !regName.trim()) {
       setRegShake(true);
       setTimeout(() => setRegShake(false), 500);
       return;
     }
 
     setRegState('loading');
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: regName,
+          email: regEmail,
+          password: regPass,
+          password_confirmation: regPass, // Laravel exige la confirmación
+          role: role,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en el registro');
+      }
+
+      // Guardar Token
+      localStorage.setItem('auth_token', data.token);
+
       setRegState('success');
-      setTimeout(() =>{
-        onSuccess?.({email: regEmail, role});
+      setTimeout(() => {
+        const userData = { email: data.user.email, role: data.user.role };
+        onSuccess?.(userData);
         onClose?.();
       }, 1000);
-    }, 1100);
+
+    } catch (err: any) {
+      setRegState('idle');
+      setRegError(err.message || 'Error al crear la cuenta');
+      setRegShake(true);
+      setTimeout(() => setRegShake(false), 500);
+    }
   };
 
   return (
@@ -111,7 +175,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       <div className="bg-layer bg-login"></div>
       <div className="bg-layer bg-register"></div>
 
-      {/* Botón de cierre para el modal */}
       {onClose && (
         <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
           ✕
@@ -130,9 +193,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h2>Inicia sesión</h2>
             <div className="sub">Consulta el repositorio con tu cuenta institucional.</div>
             
+            {loginError && <div style={{ color: '#ff4d63', fontSize: '13px', marginBottom: '10px' }}>{loginError}</div>}
+
             <div className="field">
               <label>Correo</label>
-              <input type="email" placeholder="hu@lahuerta.tecmm.edu.mx" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}className={loginEmail ? (isLoginEmailValid ? 'valid' : 'invalid') : ''} />
+              <input 
+                type="email" 
+                placeholder="hu@lahuerta.tecmm.edu.mx" 
+                value={loginEmail} 
+                onChange={(e) => setLoginEmail(e.target.value)} 
+                className={loginEmail ? (isLoginEmailValid ? 'valid' : 'invalid') : ''} 
+              />
               <span className={`status-icon show ${isLoginEmailValid ? 'ok' : 'err'}`} style={{ opacity: loginEmail ? 1 : 0 }}>
                 {isLoginEmailValid ? '✓' : '!'}
               </span>
@@ -140,7 +211,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div className="field pw-wrap">
               <label>Contraseña</label>
-              <input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} />
+              <input 
+                type={showLoginPass ? 'text' : 'password'} 
+                placeholder="••••••••" 
+                value={loginPass} 
+                onChange={(e) => setLoginPass(e.target.value)} 
+              />
               <button type="button" className="pw-toggle" onClick={() => setShowLoginPass(!showLoginPass)}>
                 {showLoginPass ? '🙈' : '👁'}
               </button>
@@ -168,35 +244,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h2>Crea tu cuenta</h2>
             <div className="sub">Solo para consulta — el registro no otorga permisos de edición.</div>
 
+            {regError && <div style={{ color: '#ff4d63', fontSize: '13px', marginBottom: '10px' }}>{regError}</div>}
+
             <div className="role-select">
               <div className={`role-opt ${role === 'estudiante' ? 'active' : ''}`} onClick={() => setRole('estudiante')}>
                 Estudiante
               </div>
-              <div
-                className={`role-opt ${role === 'externo' ? 'active' : ''}`}
-                onClick={() => setRole('externo')}
-              >
+              <div className={`role-opt ${role === 'externo' ? 'active' : ''}`} onClick={() => setRole('externo')}>
                 Usuario externo
               </div>
-            </div>
-            <div className="role-note">
-              {role === 'estudiante'
-                ? 'Se validará con tu correo institucional (@lahuerta.tecmm.edu.mx).'
-                : 'Cuenta de solo lectura, sin necesidad de correo institucional.'}
-            </div>
-
-            <div className={`greeting ${regName.trim().length > 1 ? 'show' : ''}`}>
-              {regName.trim().length > 1 ? `¡Hola, ${regName.trim().split(' ')[0]}! 👋` : ''}
             </div>
 
             <div className="field">
               <label>Nombre completo</label>
-              <input
-                type="text"
-                placeholder="Tu nombre"
-                value={regName}
-                onChange={(e) => setRegName(e.target.value)}
-              />
+              <input type="text" placeholder="Tu nombre" value={regName} onChange={(e) => setRegName(e.target.value)} />
             </div>
 
             <div className="field">
@@ -208,12 +269,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onChange={(e) => setRegEmail(e.target.value)}
                 className={regEmail ? (isRegEmailValid ? 'valid' : 'invalid') : ''}
               />
-              <span className={`status-icon show ${isRegEmailValid ? 'ok' : 'err'}`} style={{ opacity: regEmail ? 1 : 0 }}>
-                {isRegEmailValid ? '✓' : '!'}
-              </span>
-              <div className={`hint ${regEmail && !isRegEmailValid ? 'show' : ''}`}>
-                {role === 'estudiante' ? 'Debe ser un correo @lahuerta.tecmm.edu.mx.' : 'Correo no válido.'}
-              </div>
             </div>
 
             <div className="field pw-wrap">
@@ -224,11 +279,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={regPass}
                 onChange={(e) => setRegPass(e.target.value)}
               />
-              <button
-                type="button"
-                className="pw-toggle"
-                onClick={() => setShowRegPass(!showRegPass)}
-              >
+              <button type="button" className="pw-toggle" onClick={() => setShowRegPass(!showRegPass)}>
                 {showRegPass ? '🙈' : '👁'}
               </button>
             </div>
@@ -261,10 +312,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* OVERLAY DESLIZANTE */}
         <div className="overlay-container" id="overlayContainer">
           <div className="overlay">
-            <div className="float-shape fs1"></div>
-            <div className="float-shape fs2"></div>
-            <div className="float-shape fs3"></div>
-            
             <div className="overlay-panel">
               <h3>¿Ya tienes cuenta?</h3>
               <p>Inicia sesión para guardar búsquedas y acceder más rápido a tus consultas frecuentes.</p>
