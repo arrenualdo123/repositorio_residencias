@@ -8,7 +8,7 @@ interface AuthModalProps {
   onSuccess?: (userData: { email: string; role: string }) => void;
 }
 
-const API_URL = 'http://127.0.0.1:8000/api'; // Cambia el puerto si tu php artisan serve usa otro
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   initialMode = 'login',
