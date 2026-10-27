@@ -87,6 +87,7 @@ class StudentDocumentController extends Controller
             'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
             'size' => $file->getSize(),
             'status' => 'Recibido',
+            'feedback' => null,
         ])->save();
 
         if ($previousPath) {
@@ -116,6 +117,7 @@ class StudentDocumentController extends Controller
             'title' => $document->title,
             'detail' => 'Subido el '.$document->created_at->format('d/m/Y').' · '.strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION)).' · '.number_format($document->size / 1024).' KB',
             'status' => $document->status,
+            'feedback' => $document->feedback,
             'file_url' => url('/api/student/documents/'.$document->id.'/file'),
         ];
     }

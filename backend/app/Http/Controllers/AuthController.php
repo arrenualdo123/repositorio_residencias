@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -11,21 +12,31 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        $isInstitutional = str_ends_with(
+            strtolower((string) $request->input('email')),
+            '@lahuerta.tecmm.edu.mx',
+        );
+
         $fields = $request->validate([
             'name'     => 'required|string',
             'email'    => 'required|string|email|unique:users,email',
             'password' => 'required|string|confirmed',
+            'career_code' => [
+                Rule::requiredIf($isInstitutional),
+                'nullable',
+                'string',
+                Rule::in(array_keys(config('residence.careers'))),
+            ],
         ]);
 
-        $role = str_ends_with(strtolower($fields['email']), '@lahuerta.tecmm.edu.mx')
-            ? 'institutional'
-            : 'reader';
+        $role = $isInstitutional ? 'institutional' : 'reader';
 
         $user = User::create([
             'name'     => $fields['name'],
             'email'    => $fields['email'],
             'password' => Hash::make($fields['password']),
             'role'     => $role,
+            'career_code' => $isInstitutional ? $fields['career_code'] : null,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -35,6 +46,7 @@ class AuthController extends Controller
                 'name'  => $user->name,
                 'email' => $user->email,
                 'role'  => $user->role,
+                'career_code' => $user->career_code,
             ],
             'token' => $token,
         ], 201);
@@ -62,6 +74,7 @@ class AuthController extends Controller
                 'name'  => $user->name,
                 'email' => $user->email,
                 'role'  => $user->role,
+                'career_code' => $user->career_code,
             ],
             'token' => $token,
         ]);
@@ -83,6 +96,7 @@ class AuthController extends Controller
                 'name'  => $request->user()->name,
                 'email' => $request->user()->email,
                 'role'  => $request->user()->role,
+                'career_code' => $request->user()->career_code,
             ]
         ]);
     }

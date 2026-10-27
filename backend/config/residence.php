@@ -2,7 +2,10 @@
 
 return [
     'careers' => [
-        'ISIC' => 'Ingeniería en Sistemas Computacionales',
+        'ISC' => 'Ingeniería en Sistemas Computacionales',
+        'IIA' => 'Ingeniería en Industrias Alimentarias',
+        'ARQ' => 'Arquitectura',
+        'IADM' => 'Ingeniería en Administración',
         'IINF' => 'Ingeniería Informática',
         'ICIV' => 'Ingeniería Civil',
         'IGEM' => 'Ingeniería en Gestión Empresarial',

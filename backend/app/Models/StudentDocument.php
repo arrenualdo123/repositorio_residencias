@@ -18,6 +18,7 @@ class StudentDocument extends Model
         'mime_type',
         'size',
         'status',
+        'feedback',
     ];
 
     public function user(): BelongsTo

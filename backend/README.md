@@ -91,11 +91,13 @@ php artisan route:list --path=api
 |---|---|---|---|
 | `POST` | `/api/register` | Público | Registrar cuenta; el backend asigna el rol por dominio de correo. |
 | `POST` | `/api/login` | Público | Iniciar sesión y recibir token Sanctum. |
+| `GET` | `/api/careers` | Público | Obtener las claves y nombres de carreras para el registro. |
 | `GET` | `/api/repository/search` | Público | Buscar fichas publicadas de residencias. Acepta `q`, `title`, `summary`, `career`, `year_from` y `year_to`. |
 | `POST` | `/api/logout` | Token | Revocar el token actual. |
 | `GET` | `/api/user` | Token | Consultar la cuenta autenticada. |
 | `GET` | `/api/student/expedients` | Alumno institucional | Obtener expedientes, checklist y carreras disponibles. |
-| `POST` | `/api/student/expedients` | Alumno institucional | Crear/seleccionar expediente enviando `career_code`, `period_name` y `year`. |
+| `POST` | `/api/student/career` | Alumno institucional | Guardar una sola vez la carrera del perfil; solo se permite si aún no tiene carrera. |
+| `POST` | `/api/student/expedients` | Alumno institucional | Crear/seleccionar expediente enviando `period_name` y `year`; la carrera se toma del perfil autenticado. |
 | `POST` | `/api/student/expedients/{id}/documents` | Dueño institucional | Subir archivo para una casilla con `requirement_code` y `file`. |
 | `GET` | `/api/student/documents/{id}/file` | Dueño o admin | Descargar documento privado con token. |
 | `GET` | `/api/admin/documents` | Admin | Consultar archivos cargados y conteos. |
@@ -106,6 +108,8 @@ Las rutas protegidas requieren `Authorization: Bearer <token>` y `Accept: applic
 ## Roles y archivos
 
 - El registro asigna `institutional` si el correo termina en `@lahuerta.tecmm.edu.mx`; los demás reciben `reader`. El rol enviado desde el navegador no concede privilegios.
+- El registro institucional también requiere `career_code`, tomado de `GET /api/careers`. La carrera es un dato del perfil, distinto del rol; los expedientes heredan la carrera del usuario.
+- Las cuentas institucionales existentes heredan la carrera de su expediente más reciente durante la migración. Si una cuenta antigua no tenía expediente, el panel le solicitará completar su carrera una sola vez.
 - El backend permite cargar archivos solo a usuarios `institutional`. Esto comprueba el dominio, **no verifica la propiedad del buzón**; para verificar correo se necesitaría implementar confirmación por email.
 - Los documentos se guardan en el disco privado local de Laravel, bajo `storage/app/private/student-documents/`. No ejecutes `php artisan storage:link` para estos archivos: no deben publicarse como recursos estáticos.
 - El límite de aplicación es 10 MB. Los requisitos aceptan PDF; los dos archivos del informe técnico tienen requisitos separados DOCX y PDF.

@@ -18,6 +18,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [isActive, setIsActive] = useState<boolean>(initialMode === 'register');
   const [role, setRole] = useState<'estudiante' | 'externo'>('estudiante');
+  const [careers, setCareers] = useState<Record<string, string>>({});
+  const [regCareer, setRegCareer] = useState('');
+  const [careerError, setCareerError] = useState('');
 
   // Estados de inputs login
   const [loginEmail, setLoginEmail] = useState('');
@@ -40,11 +43,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsActive(initialMode === 'register');
   }, [initialMode]);
 
+  useEffect(() => {
+    fetch(`${API_URL}/careers`, { headers: { Accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('No se pudieron cargar las carreras.');
+        const data: { careers: Record<string, string> } = await response.json();
+        setCareers(data.careers);
+      })
+      .catch(() => setCareerError('No se pudo cargar la lista de carreras.'));
+  }, []);
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const validateEmail = (email: string) => {
     if (!emailRegex.test(email)) return false;
-    if (role === 'estudiante') return email.endsWith('@lahuerta.tecmm.edu.mx');
+    if (role === 'estudiante') return email.toLowerCase().endsWith('@lahuerta.tecmm.edu.mx');
     return true;
   };
 
@@ -61,7 +74,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const passScore = getPasswordStrength(regPass);
-  const strengthColors = ['#ff4d63', '#ffae31', '#308fff', '#54c98f'];
+  const strengthColors = ['var(--palette-d)', 'var(--palette-e)', 'var(--palette-b)', 'var(--palette-c)'];
   const strengthLabels = ['Muy débil', 'Débil', 'Aceptable', 'Fuerte'];
 
   // --- MANEJADOR DE LOGIN CONECTADO A LARAVEL ---
@@ -122,7 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     if (regState !== 'idle') return;
     setRegError('');
 
-    if (!isRegEmailValid || regPass.length < 8 || !regName.trim()) {
+    if (!isRegEmailValid || regPass.length < 8 || !regName.trim() || (role === 'estudiante' && !regCareer)) {
       setRegShake(true);
       setTimeout(() => setRegShake(false), 500);
       return;
@@ -142,7 +155,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           email: regEmail,
           password: regPass,
           password_confirmation: regPass, // Laravel exige la confirmación
-          role: role,
+          ...(role === 'estudiante' ? { career_code: regCareer } : {}),
         }),
       });
 
@@ -193,7 +206,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h2>Inicia sesión</h2>
             <div className="sub">Consulta el repositorio con tu cuenta institucional.</div>
             
-            {loginError && <div style={{ color: '#ff4d63', fontSize: '13px', marginBottom: '10px' }}>{loginError}</div>}
+            {loginError && <div style={{ color: 'var(--palette-d)', fontSize: '13px', marginBottom: '10px' }}>{loginError}</div>}
 
             <div className="field">
               <label>Correo</label>
@@ -244,7 +257,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h2>Crea tu cuenta</h2>
             <div className="sub">Solo para consulta — el registro no otorga permisos de edición.</div>
 
-            {regError && <div style={{ color: '#ff4d63', fontSize: '13px', marginBottom: '10px' }}>{regError}</div>}
+            {regError && <div style={{ color: 'var(--palette-d)', fontSize: '13px', marginBottom: '10px' }}>{regError}</div>}
 
             <div className="role-select">
               <div className={`role-opt ${role === 'estudiante' ? 'active' : ''}`} onClick={() => setRole('estudiante')}>
@@ -259,6 +272,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <label>Nombre completo</label>
               <input type="text" placeholder="Tu nombre" value={regName} onChange={(e) => setRegName(e.target.value)} />
             </div>
+
+            {role === 'estudiante' && (
+              <div className="field">
+                <label htmlFor="registration-career">Carrera</label>
+                <select
+                  id="registration-career"
+                  required
+                  value={regCareer}
+                  onChange={(event) => setRegCareer(event.target.value)}
+                  disabled={Object.keys(careers).length === 0}
+                >
+                  <option value="">Selecciona tu carrera</option>
+                  {Object.entries(careers).map(([code, name]) => (
+                    <option key={code} value={code}>{code} — {name}</option>
+                  ))}
+                </select>
+                {careerError && <span className="hint show">{careerError}</span>}
+              </div>
+            )}
 
             <div className="field">
               <label>Correo</label>

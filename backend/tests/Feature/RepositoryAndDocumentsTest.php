@@ -82,18 +82,51 @@ class RepositoryAndDocumentsTest extends TestCase
 
     public function test_institutional_student_can_create_an_expedient_with_the_full_checklist(): void
     {
-        $student = User::factory()->create(['role' => 'institutional']);
+        $student = User::factory()->create([
+            'role' => 'institutional',
+            'career_code' => 'ISC',
+        ]);
 
         $this->actingAs($student, 'sanctum')
             ->postJson('/api/student/expedients', [
-                'career_code' => 'ISIC',
+                'career_code' => 'IIND',
                 'period_name' => 'Ago-Dic',
                 'year' => now()->year,
             ])
             ->assertCreated()
-            ->assertJsonPath('expedient.career_code', 'ISIC')
+            ->assertJsonPath('expedient.career_code', 'ISC')
             ->assertJsonPath('expedient.period', 'Ago-Dic '.now()->year)
             ->assertJsonPath('expedient.completed', 0)
             ->assertJsonPath('expedient.total', 11);
+    }
+
+    public function test_institutional_registration_requires_a_valid_career_and_stores_it_on_the_profile(): void
+    {
+        $this->postJson('/api/register', [
+            'name' => 'Estudiante de prueba',
+            'email' => 'alumno@lahuerta.tecmm.edu.mx',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('career_code');
+
+        $this->postJson('/api/register', [
+            'name' => 'Estudiante de prueba',
+            'email' => 'alumno@lahuerta.tecmm.edu.mx',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'career_code' => 'ISC',
+            'role' => 'admin',
+        ])->assertCreated()
+            ->assertJsonPath('user.role', 'institutional')
+            ->assertJsonPath('user.career_code', 'ISC');
+
+        $this->getJson('/api/careers')
+            ->assertOk()
+            ->assertJsonPath('careers.ISC', 'Ingeniería en Sistemas Computacionales')
+            ->assertJsonPath('careers.IIA', 'Ingeniería en Industrias Alimentarias')
+            ->assertJsonPath('careers.ARQ', 'Arquitectura')
+            ->assertJsonPath('careers.IADM', 'Ingeniería en Administración')
+            ->assertJsonPath('careers.COPU', 'Contador Público');
     }
 }

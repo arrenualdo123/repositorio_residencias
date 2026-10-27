@@ -1,17 +1,22 @@
 :root {
-  --primary: #33179c;
-  --primary-soft: rgba(51, 23, 156, 0.08);
-  --primary-strong: #2a1381;
-  --secondary: #308fff;
-  --success: #54c98f;
-  --warning: #ffae31;
-  --danger: #ff4d63;
-  --ink: #16181d;
-  --muted: #6b7080;
-  --line: #e6e7ea;
-  --surface: #fafafb;
+  --brand-red-100: var(--palette-d);
+  --brand-red-80: var(--palette-d-80);
+  --brand-red-60: var(--palette-d-60);
+  --brand-red-40: var(--palette-d-40);
+  --brand-red-20: var(--palette-d-20);
+  --primary: var(--brand-red-100);
+  --primary-soft: var(--brand-red-20);
+  --primary-strong: var(--brand-red-80);
+  --secondary: var(--palette-b);
+  --success: var(--palette-c);
+  --warning: var(--palette-e);
+  --danger: var(--palette-d);
+  --ink: var(--palette-a);
+  --muted: var(--palette-a-80);
+  --line: var(--palette-f-60);
+  --surface: var(--palette-f-20);
   --white: #ffffff;
-  --shadow: rgba(24, 27, 39, 0.12);
+  --shadow: var(--palette-a-20);
 }
 
 .auth-page-container {
@@ -28,7 +33,7 @@
   font-size: 14px;
   color: var(--ink);
   overflow-x: hidden;
-  background: rgba(10, 13, 26, 0.3);
+  background: var(--palette-a-20);
 }
 
 .auth-page-container *,
@@ -54,17 +59,17 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(7, 9, 16, 0.38);
+  background: var(--palette-a-40);
 }
 
 .bg-login {
-  background-image: linear-gradient(135deg, var(--primary) 0%, #0a0d1a 100%);
+  background-image: linear-gradient(135deg, var(--primary) 0%, var(--palette-a) 100%);
   opacity: 1;
   z-index: -1;
 }
 
 .bg-register {
-  background-image: linear-gradient(135deg, var(--secondary) 0%, #0a0d1a 100%);
+  background-image: linear-gradient(135deg, var(--secondary) 0%, var(--palette-a) 100%);
   opacity: 0;
 }
 
@@ -151,10 +156,11 @@
   margin-bottom: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #3a3d45;
+  color: var(--palette-a);
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -167,19 +173,20 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 .field input.valid {
   border-color: var(--success);
-  background: rgba(84, 201, 143, 0.08);
+  background: var(--palette-c-20);
 }
 
 .field input.invalid {
   border-color: var(--danger);
-  background: rgba(255, 77, 99, 0.05);
+  background: var(--palette-d-20);
 }
 
 .role-select {
@@ -211,7 +218,7 @@
 .role-note {
   margin-top: -10px;
   margin-bottom: 16px;
-  color: #9aa1af;
+  color: var(--palette-a-80);
   font-size: 11px;
 }
 
@@ -279,7 +286,7 @@
   display: flex;
   width: 200%;
   height: 100%;
-  background: linear-gradient(135deg, var(--primary) 0%, #241381 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--palette-a) 100%);
   color: var(--white);
   transition: transform 0.55s cubic-bezier(0.65, 0, 0.35, 1);
 }

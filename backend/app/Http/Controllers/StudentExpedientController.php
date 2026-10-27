@@ -28,11 +28,34 @@ class StudentExpedientController extends Controller
                     'title' => $document->title,
                     'detail' => 'Subido el '.$document->created_at->format('d/m/Y').' · '.strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION)).' · '.number_format($document->size / 1024).' KB',
                     'status' => $document->status,
+                    'feedback' => $document->feedback,
                     'file_url' => url('/api/student/documents/'.$document->id.'/file'),
                 ])
                 ->values(),
+            'career_code' => $request->user()->career_code,
+            'career' => config('residence.careers.'.$request->user()->career_code),
             'careers' => config('residence.careers'),
             'periods' => config('residence.periods'),
+        ]);
+    }
+
+    public function storeCareer(Request $request)
+    {
+        abort_unless($request->user()->role === 'institutional', 403);
+
+        if ($request->user()->career_code) {
+            abort(409, 'La carrera ya está configurada en el perfil.');
+        }
+
+        $fields = $request->validate([
+            'career_code' => ['required', 'string', 'in:'.implode(',', array_keys(config('residence.careers')))],
+        ]);
+
+        $request->user()->forceFill(['career_code' => $fields['career_code']])->save();
+
+        return response()->json([
+            'career_code' => $request->user()->career_code,
+            'career' => config('residence.careers.'.$request->user()->career_code),
         ]);
     }
 
@@ -40,15 +63,18 @@ class StudentExpedientController extends Controller
     {
         abort_unless($request->user()->role === 'institutional', 403);
 
+        if (!$request->user()->career_code) {
+            abort(422, 'Configura la carrera de tu perfil antes de crear el expediente.');
+        }
+
         $fields = $request->validate([
-            'career_code' => ['required', 'string', 'in:'.implode(',', array_keys(config('residence.careers')))],
             'period_name' => ['required', 'string', 'in:'.implode(',', config('residence.periods'))],
             'year' => ['required', 'integer', 'min:2020', 'max:'.(now()->year + 1)],
         ]);
 
         $expedient = ResidenceExpedient::firstOrCreate([
             'user_id' => $request->user()->id,
-            'career_code' => $fields['career_code'],
+            'career_code' => $request->user()->career_code,
             'period' => $fields['period_name'].' '.$fields['year'],
         ]);
 
@@ -73,6 +99,7 @@ class StudentExpedientController extends Controller
                         'identifier' => $document->identifier,
                         'detail' => 'Subido el '.$document->created_at->format('d/m/Y').' · '.strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION)).' · '.number_format($document->size / 1024).' KB',
                         'status' => $document->status,
+                        'feedback' => $document->feedback,
                         'file_url' => url('/api/student/documents/'.$document->id.'/file'),
                     ] : null,
                 ];
