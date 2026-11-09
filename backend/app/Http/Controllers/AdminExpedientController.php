@@ -6,6 +6,8 @@ use App\Models\ResidenceExpedient;
 use App\Models\StudentDocument;
 use App\Models\RepositoryEntry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AdminExpedientController extends Controller
 {
@@ -145,6 +147,18 @@ class AdminExpedientController extends Controller
             'year'        => ['required', 'integer', 'min:1990', 'max:2100'],
         ]);
 
+        $filePath = null;
+        $fileName = null;
+        $fileSize = null;
+
+        if ($reportDoc->path && Storage::disk('local')->exists($reportDoc->path)) {
+            $ext = pathinfo($reportDoc->original_name, PATHINFO_EXTENSION) ?: 'pdf';
+            $filePath = 'public-repository/' . Str::uuid() . '.' . $ext;
+            Storage::disk('local')->copy($reportDoc->path, $filePath);
+            $fileName = $reportDoc->original_name;
+            $fileSize = $reportDoc->size;
+        }
+
         $entry = RepositoryEntry::create([
             'title'       => $fields['title'],
             'type'        => 'Residencia',
@@ -153,11 +167,14 @@ class AdminExpedientController extends Controller
             'institution' => 'TecNM Campus La Huerta',
             'year'        => $fields['year'],
             'description' => $fields['description'] ?? '',
+            'file_path'   => $filePath,
+            'file_name'   => $fileName,
+            'file_size'   => $fileSize,
             'published'   => true,
         ]);
 
         return response()->json([
-            'message' => 'Ficha publicada exitosamente en el catálogo público.',
+            'message' => 'Ficha publicada exitosamente en el catálogo público con su informe técnico.',
             'entry'   => $entry,
         ], 201);
     }

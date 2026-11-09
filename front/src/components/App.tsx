@@ -16,6 +16,13 @@ import {
   Search,
   ChevronRight,
   BookOpen,
+  Download,
+  Copy,
+  Check,
+  Trash2,
+  Globe,
+  X,
+  BookCheck,
 } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
@@ -25,13 +32,22 @@ type SearchResult = {
   identifier: string;
   title: string;
   type: string;
+  author?: string;
+  career?: string;
+  institution?: string;
+  year?: number;
   meta: string;
   description?: string;
+  has_file?: boolean;
+  file_name?: string | null;
+  file_url?: string | null;
 };
 
 type SearchResponse = {
   data: SearchResult[];
   total: number;
+  current_page: number;
+  last_page: number;
 };
 
 type StudentDocument = {
@@ -84,6 +100,22 @@ type AdminExpedient = {
   approved: number;
   total: number;
   requirements: ResidenceRequirement[];
+};
+
+type AdminCatalogEntry = {
+  id: number;
+  identifier: string;
+  title: string;
+  type: string;
+  author: string;
+  career: string;
+  institution: string;
+  year: number;
+  description: string;
+  published: boolean;
+  file_name: string | null;
+  file_url: string | null;
+  created_at: string;
 };
 
 type AdminSummary = {
@@ -162,31 +194,143 @@ function Header({
   onLogout: () => void;
 }) {
   return (
-    <header className="bg-[var(--brand-red-100)] text-white">
+    <header className="bg-[var(--brand-red-100)] text-white shadow-md">
       <div className="mx-auto flex h-16 max-w-[1180px] items-center justify-between px-6">
         <button
           type="button"
           onClick={() => onNavigateToCatalog()}
           className="flex items-center gap-2 text-lg font-bold"
         >
-          <Database className="h-5 w-5" />
-          Repositorio
-          <span className="font-normal opacity-80"> Institucional</span>
+          <Database className="h-5 w-5 text-white" />
+          <span>Repositorio</span>
+          <span className="font-normal opacity-90">Institucional TSJ La Huerta</span>
         </button>
 
-        <nav className="hidden gap-6 text-sm md:flex">
-          <button type="button" onClick={() => onNavigateToCatalog()}>Buscar</button>
-          <button type="button" onClick={() => onNavigateToCatalog()}>Residencias</button>
+        <nav className="hidden gap-6 text-sm font-medium md:flex">
+          <button type="button" onClick={() => onNavigateToCatalog()} className="hover:underline">
+            Buscar
+          </button>
+          <button type="button" onClick={() => onNavigateToCatalog()} className="hover:underline">
+            Residencias
+          </button>
         </nav>
 
         <button
           onClick={isAuthenticated ? onLogout : onOpenLogin}
-          className="rounded bg-white px-3 py-2 text-xs font-semibold text-[var(--brand-red-100)] hover:bg-red-50"
+          className="rounded bg-white px-3.5 py-1.5 text-xs font-semibold text-[var(--brand-red-100)] shadow-sm hover:bg-red-50"
         >
-          {isAuthenticated ? 'Salir' : 'Identificarse'}
+          {isAuthenticated ? 'Cerrar Sesión' : 'Identificarse'}
         </button>
       </div>
     </header>
+  );
+}
+
+// Modal de Metadatos Dublin Core y Cita APA
+function DublinCoreModal({
+  result,
+  onClose,
+}: {
+  result: SearchResult;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const apaCitation = `${result.author || 'Autor no especificado'} (${result.year || 's.f.'}). ${result.title} [Informe de Residencia Profesional, TecNM Campus La Huerta]. Repositorio Institucional Digital.`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(apaCitation);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const dublinCoreFields = [
+    { label: 'dc:title (Título)', value: result.title },
+    { label: 'dc:creator (Autor)', value: result.author || 'No especificado' },
+    { label: 'dc:date (Fecha)', value: result.year ? String(result.year) : 's.f.' },
+    { label: 'dc:type (Tipo de recurso)', value: 'info:eu-repo/semantics/bachelorThesis / Residencia Profesional' },
+    { label: 'dc:format (Formato)', value: 'application/pdf' },
+    { label: 'dc:identifier (Identificador / Folio)', value: result.identifier },
+    { label: 'dc:publisher (Institución editora)', value: 'Tecnológico Nacional de México / Instituto Tecnológico Superior de Jalisco, Unidad Académica La Huerta' },
+    { label: 'dc:subject (Materia / Carrera)', value: result.career || 'Residencia Profesional' },
+    { label: 'dc:description (Resumen)', value: result.description || 'Sin resumen disponible.' },
+    { label: 'dc:rights (Derechos / Acceso)', value: 'Acceso Abierto (Open Access) - Licencia Creative Commons Atribución-NoComercial 4.0 Internacional' },
+    { label: 'dc:language (Idioma)', value: 'spa (Español)' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <BookCheck className="h-5 w-5 text-[var(--brand-red-100)]" />
+            <h2 className="text-base font-bold text-slate-900">Metadatos Bibliográficos & Cita Académica</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="max-h-[75vh] space-y-5 overflow-y-auto p-6 text-sm">
+          {/* Cita APA 7 */}
+          <div className="rounded-lg border border-red-200 bg-red-50/50 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-red-900">
+                Cita en Formato APA (7ª Edición)
+              </span>
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="inline-flex items-center gap-1 rounded bg-[var(--brand-red-100)] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[var(--brand-red-80)]"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? '¡Copiado!' : 'Copiar Cita'}
+              </button>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-slate-800 italic select-all">
+              {apaCitation}
+            </p>
+          </div>
+
+          {/* Tabla Dublin Core */}
+          <div>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">
+              Esquema de Metadatos Estándar Dublin Core (ISO 15836)
+            </h3>
+            <div className="overflow-hidden rounded-lg border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-600 uppercase">
+                  <tr>
+                    <th className="px-3 py-2 w-1/3">Elemento Dublin Core</th>
+                    <th className="px-3 py-2 w-2/3">Valor / Metadato</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {dublinCoreFields.map((field) => (
+                    <tr key={field.label} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 font-mono font-medium text-slate-700">{field.label}</td>
+                      <td className="px-3 py-2 text-slate-900">{field.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 bg-slate-50 px-6 py-3 text-right">
+          <button
+            onClick={onClose}
+            className="rounded border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -206,10 +350,13 @@ function PublicView({
   const [summaryFilter, setSummaryFilter] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedCitation, setSelectedCitation] = useState<SearchResult | null>(null);
 
-  async function searchRepository(event?: FormEvent) {
+  async function searchRepository(page = 1, event?: FormEvent) {
     event?.preventDefault();
     setLoading(true);
     setError('');
@@ -221,12 +368,15 @@ function PublicView({
     if (yearTo) params.set('year_to', yearTo);
     if (titleFilter.trim()) params.set('title', titleFilter.trim());
     if (summaryFilter.trim()) params.set('summary', summaryFilter.trim());
+    if (page > 1) params.set('page', String(page));
 
     try {
       const data = await request<SearchResponse>(`/repository/search?${params}`);
 
       setResults(data.data);
       setTotal(data.total);
+      setCurrentPage(data.current_page);
+      setLastPage(data.last_page);
     } catch {
       setError('No se pudieron cargar los resultados.');
     } finally {
@@ -235,29 +385,29 @@ function PublicView({
   }
 
   useEffect(() => {
-    searchRepository();
+    void searchRepository();
     void request<{ careers: Record<string, string> }>('/careers')
       .then((data) => setCareerOptions(data.careers))
       .catch(() => setCareerOptions({}));
   }, []);
 
   return (
-    <main className="mx-auto grid w-full max-w-[1280px] justify-center gap-8 px-6 py-8 md:grid-cols-[220px_minmax(0,680px)_240px]">
+    <main className="mx-auto grid w-full max-w-[1280px] justify-center gap-8 px-6 py-8 md:grid-cols-[240px_minmax(0,720px)_240px]">
       <aside className="space-y-6 text-sm">
         <h2 className="flex items-center gap-2 border-b border-[var(--palette-f-60)] pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--palette-a-80)]">
-          Filtros
+          <Filter className="h-4 w-4" /> Filtros del Catálogo
         </h2>
 
-        <div className="rounded border border-[var(--palette-f-60)] bg-white px-3 py-2 text-sm">
-          Tipo de documento<br /><strong>Residencias profesionales</strong>
+        <div className="rounded border border-[var(--palette-f-60)] bg-white px-3 py-2 text-sm shadow-xs">
+          Tipo de documento<br /><strong>Residencias Profesionales</strong>
         </div>
 
         <div>
           <h3 className="mb-2 font-semibold">Carrera</h3>
-          <select value={career} onChange={(event) => setCareer(event.target.value)} className="w-full rounded border border-[var(--palette-f-60)] bg-white px-2 py-2">
-            <option value="">Todas</option>
+          <select value={career} onChange={(event) => setCareer(event.target.value)} className="w-full rounded border border-[var(--palette-f-60)] bg-white px-2 py-2 text-xs">
+            <option value="">Todas las carreras</option>
             {Object.entries(careerOptions).map(([code, name]) => (
-              <option key={code} value={name}>{name}</option>
+              <option key={code} value={name}>{code} — {name}</option>
             ))}
           </select>
         </div>
@@ -272,113 +422,200 @@ function PublicView({
             Hasta
             <input type="number" min="1900" max="2100" value={yearTo} onChange={(event) => setYearTo(event.target.value)} className="mt-1 w-full rounded border border-[var(--palette-f-60)] px-2 py-1.5 text-sm text-[var(--palette-a)]" />
           </label>
-          <button type="button" onClick={() => void searchRepository()} className="mt-3 w-full rounded bg-[var(--brand-red-100)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--brand-red-80)]">
+          <button type="button" onClick={() => void searchRepository(1)} className="mt-3 w-full rounded bg-[var(--brand-red-100)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--brand-red-80)]">
             Aplicar filtros
           </button>
         </div>
       </aside>
 
       <section className="min-w-0">
-        <h1 className="mb-3 text-xl font-bold">
-          Buscar en el repositorio
+        <h1 className="mb-3 text-2xl font-bold tracking-tight">
+          Buscar en el Repositorio Institucional
         </h1>
+        <p className="mb-4 text-xs text-slate-500">
+          Consulta y descarga en acceso abierto los informes técnicos de residencia aprobados del TecNM Campus La Huerta.
+        </p>
 
-        <form onSubmit={searchRepository} className="mb-5 flex gap-2">
+        <form onSubmit={(e) => searchRepository(1, e)} className="mb-5 flex gap-2">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Título, autor o palabra clave"
-            className="flex-1 rounded border border-[var(--palette-f-60)] px-3 py-2"
+            placeholder="Título, autor o palabra clave..."
+            className="flex-1 rounded-lg border border-[var(--palette-f-60)] bg-white px-3.5 py-2 text-sm shadow-xs"
           />
 
           <button
             type="submit"
-            className="rounded bg-[var(--brand-red-100)] px-5 font-semibold text-white hover:bg-[var(--brand-red-80)]"
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--brand-red-100)] px-5 font-semibold text-white shadow-xs hover:bg-[var(--brand-red-80)]"
           >
-            Buscar
+            <Search className="h-4 w-4" /> Buscar
           </button>
         </form>
 
-        <details className="mb-5 rounded border border-[var(--palette-f-60)] bg-white px-3 py-2">
-          <summary className="cursor-pointer text-sm font-semibold">Búsqueda avanzada por título y resumen</summary>
+        <details className="mb-5 rounded-lg border border-[var(--palette-f-60)] bg-white px-4 py-3 shadow-xs">
+          <summary className="cursor-pointer text-xs font-semibold text-slate-700">Búsqueda avanzada por título y resumen</summary>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="text-xs font-medium text-[var(--palette-a-80)]">
-              Título
-              <input value={titleFilter} onChange={(event) => setTitleFilter(event.target.value)} className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm text-[var(--palette-a)]" placeholder="Palabras del título" />
+              Palabras en el título
+              <input value={titleFilter} onChange={(event) => setTitleFilter(event.target.value)} className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-1.5 text-xs text-[var(--palette-a)]" placeholder="Ej. Inventarios, Envasado..." />
             </label>
             <label className="text-xs font-medium text-[var(--palette-a-80)]">
-              Resumen
-              <input value={summaryFilter} onChange={(event) => setSummaryFilter(event.target.value)} className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm text-[var(--palette-a)]" placeholder="Palabras del resumen" />
+              Palabras en el resumen
+              <input value={summaryFilter} onChange={(event) => setSummaryFilter(event.target.value)} className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-1.5 text-xs text-[var(--palette-a)]" placeholder="Ej. Microservicios, Lean Six Sigma..." />
             </label>
-            <button type="button" onClick={() => void searchRepository()} className="rounded bg-[var(--brand-red-100)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--brand-red-80)] sm:col-span-2">
-              Aplicar búsqueda avanzada
+            <button type="button" onClick={() => void searchRepository(1)} className="rounded bg-[var(--brand-red-100)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--brand-red-80)] sm:col-span-2">
+              Filtrar resultados
             </button>
           </div>
         </details>
 
-        <p id="repository-count" className="mb-3 text-sm text-[var(--palette-a-80)]">
-          {loading ? 'Buscando...' : `${total} resultados encontrados`}
+        <p id="repository-count" className="mb-3 text-xs font-medium text-[var(--palette-a-80)]">
+          {loading ? 'Buscando...' : `${total} publicaciones encontradas`}
         </p>
 
         {loading && (
-          <p className="text-sm text-[var(--palette-a-80)]">
-            Cargando resultados...
+          <p className="py-6 text-center text-sm text-[var(--palette-a-80)]">
+            Cargando acervo bibliográfico...
           </p>
         )}
 
         {error && <p className="text-sm text-[var(--palette-d)]">{error}</p>}
 
         {!loading && !error && results.length === 0 && (
-          <p className="text-sm text-[var(--palette-a-80)]">
-            No se encontraron resultados.
-          </p>
+          <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
+            No se encontraron publicaciones con los criterios ingresados.
+          </div>
         )}
 
         <div className="divide-y divide-[var(--palette-f-60)] border-t border-[var(--palette-f-60)]">
           {results.map((result) => (
-            <article key={result.id} className="py-4">
-              <h2 className="font-semibold text-[var(--brand-red-100)]">
-                {result.title}
-
-                <span className="ml-2 rounded-full border border-[var(--palette-f-60)] px-2 py-1 text-xs text-[var(--palette-a-80)]">
+            <article key={result.id} className="py-5">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <h2 className="text-base font-bold text-[var(--brand-red-100)]">
+                  {result.title}
+                </h2>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
                   {result.type}
                 </span>
-              </h2>
+                {result.career && (
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-[var(--brand-red-100)]">
+                    {result.career}
+                  </span>
+                )}
+              </div>
 
-              <p className="mt-1 text-[11px] text-[var(--palette-a-80)]">Folio: {result.identifier}</p>
+              <p className="mt-1 text-[11px] font-mono text-[var(--palette-a-80)]">
+                Folio / URI: {result.identifier}
+              </p>
 
-              <p className="mt-1 text-sm text-[var(--palette-a-80)]">
+              <p className="mt-1 text-xs text-slate-600 font-medium">
                 {result.meta}
               </p>
 
               {result.description && (
-                <p className="mt-1 text-sm">{result.description}</p>
+                <p className="mt-2 text-xs leading-relaxed text-slate-700">
+                  {result.description}
+                </p>
               )}
+
+              {/* Botones de Acción: Descarga y Cita */}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {result.has_file && result.file_url ? (
+                  <>
+                    <a
+                      href={result.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[var(--brand-red-100)] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--brand-red-80)]"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Descargar PDF
+                    </a>
+                    <a
+                      href={`${result.file_url}?preview=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Ver en línea
+                    </a>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-500">
+                    <Lock className="h-3 w-3" /> Ficha sin documento adjunto
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedCitation(result)}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[var(--palette-f-60)] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <BookCheck className="h-3.5 w-3.5 text-[var(--brand-red-100)]" /> Ficha Dublin Core / Citar
+                </button>
+              </div>
             </article>
           ))}
         </div>
+
+        {/* Paginación */}
+        {lastPage > 1 && (
+          <div className="mt-6 flex items-center justify-between border-t border-[var(--palette-f-60)] pt-4 text-xs">
+            <span className="text-slate-600">
+              Página <strong>{currentPage}</strong> de <strong>{lastPage}</strong>
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() => searchRepository(currentPage - 1)}
+                className="rounded border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                disabled={currentPage >= lastPage}
+                onClick={() => searchRepository(currentPage + 1)}
+                className="rounded border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
-      <aside className="h-fit w-full rounded-lg border border-[var(--palette-f-60)] bg-white p-5 text-center">
+      <aside className="h-fit w-full rounded-lg border border-[var(--palette-f-60)] bg-white p-5 text-center shadow-xs">
         {isAuthenticated ? (
           <>
-            <h2 className="mb-2 font-semibold">Acceso de lectura</h2>
-            <p className="text-sm text-[var(--palette-a-80)]">
-              Tu cuenta puede consultar el catálogo público. La carga de documentos requiere correo institucional.
+            <h2 className="mb-2 font-semibold">Acceso Institucional</h2>
+            <p className="text-xs text-[var(--palette-a-80)]">
+              Sesión iniciada. Tienes acceso autorizado a tu expediente o panel administrativo según tu rol.
             </p>
           </>
         ) : (
           <>
-            <h2 className="mb-4 font-semibold">Acceso alumnos</h2>
+            <h2 className="mb-3 font-semibold">Acceso Alumnos & Docentes</h2>
+            <p className="mb-4 text-xs text-[var(--palette-a-80)]">
+              Para tramitar tu expediente o revisar requisitos de residencia con correo institucional:
+            </p>
             <button
               onClick={onOpenLogin}
-              className="w-full rounded bg-[var(--brand-red-100)] py-2 font-semibold text-white hover:bg-[var(--brand-red-80)]"
+              className="w-full rounded-lg bg-[var(--brand-red-100)] py-2 font-semibold text-white shadow-xs hover:bg-[var(--brand-red-80)]"
             >
               Identificarse
             </button>
           </>
         )}
       </aside>
+
+      {/* Modal de Metadatos Dublin Core */}
+      {selectedCitation && (
+        <DublinCoreModal
+          result={selectedCitation}
+          onClose={() => setSelectedCitation(null)}
+        />
+      )}
     </main>
   );
 }
@@ -480,7 +717,7 @@ function StudentView() {
       <div className="mb-6 flex justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold">Mi expediente de residencia</h1>
-          <p className="text-sm text-[var(--palette-a-80)]">Tus archivos solo son visibles para ti y el administrador.</p>
+          <p className="text-sm text-[var(--palette-a-80)]">Tus archivos solo son visibles para ti y el personal autorizado.</p>
         </div>
 
         <div className="flex h-fit items-center gap-2 rounded-full border border-[var(--brand-red-40)] bg-[var(--brand-red-20)] px-3 py-2 text-xs font-semibold text-[var(--brand-red-100)]">
@@ -492,7 +729,7 @@ function StudentView() {
       {error && <p role="alert" className="mb-4 text-sm text-[var(--palette-d)]">{error}</p>}
 
       {!profileCareerCode && !loading && (
-        <form onSubmit={saveProfileCareer} className="mb-6 grid gap-4 rounded-lg border border-[var(--palette-f-60)] bg-white p-5">
+        <form onSubmit={saveProfileCareer} className="mb-6 grid gap-4 rounded-lg border border-[var(--palette-f-60)] bg-white p-5 shadow-xs">
           <h2 className="text-base font-semibold">Completa tu perfil académico</h2>
           <p className="text-sm text-[var(--palette-a-80)]">Registra tu carrera una sola vez. Tus expedientes nuevos la tomarán automáticamente.</p>
           <label className="text-sm font-medium">
@@ -509,7 +746,7 @@ function StudentView() {
       )}
 
       {profileCareerCode && !selectedExpedient && !loading && (
-        <form onSubmit={createExpedient} className="mb-6 grid gap-4 rounded-lg border border-[var(--palette-f-60)] bg-white p-5 sm:grid-cols-2">
+        <form onSubmit={createExpedient} className="mb-6 grid gap-4 rounded-lg border border-[var(--palette-f-60)] bg-white p-5 shadow-xs sm:grid-cols-2">
           <h2 className="text-base font-semibold sm:col-span-2">Crear expediente · {profileCareerCode} — {careers[profileCareerCode]}</h2>
           <label className="text-sm font-medium">
             Periodo
@@ -551,7 +788,7 @@ function StudentView() {
             <div className="h-full bg-[var(--brand-red-100)] transition-[width]" style={{ width: `${progress}%` }} />
           </div>
 
-          <div className="divide-y divide-[var(--palette-f-60)] overflow-hidden rounded-lg border border-[var(--palette-f-60)] bg-white">
+          <div className="divide-y divide-[var(--palette-f-60)] overflow-hidden rounded-lg border border-[var(--palette-f-60)] bg-white shadow-xs">
             {selectedExpedient.requirements.map((requirement) => (
               <RequirementRow
                 key={requirement.code}
@@ -566,8 +803,8 @@ function StudentView() {
 
       {legacyDocuments.length > 0 && (
         <section className="mt-6">
-          <h2 className="mb-2 text-sm font-semibold">Archivos subidos anteriormente (sin requisito asignado)</h2>
-          <div className="divide-y divide-[var(--palette-f-60)] overflow-hidden rounded-lg border border-[var(--palette-f-60)] bg-white">
+          <h2 className="mb-2 text-sm font-semibold">Archivos subidos anteriormente</h2>
+          <div className="divide-y divide-[var(--palette-f-60)] overflow-hidden rounded-lg border border-[var(--palette-f-60)] bg-white shadow-xs">
             {legacyDocuments.map((document) => <DocumentRow key={document.id} document={document} />)}
           </div>
         </section>
@@ -575,7 +812,7 @@ function StudentView() {
 
       <div className="mt-4 flex items-start gap-2 text-xs text-[var(--palette-a-80)]">
         <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Los archivos se guardan de forma privada y solo pueden descargarse con una sesión autorizada.
+        Tus archivos se resguardan de forma privada y protegida en el servidor institucional.
       </div>
     </main>
   );
@@ -701,7 +938,7 @@ function RequirementRow({
           <div className="flex items-start gap-2">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
             <div className="flex-1">
-              <p className="font-semibold text-red-800">Observaciones del Administrador / Asesor:</p>
+              <p className="font-semibold text-red-800">Observaciones del Revisor / Administrador:</p>
               <p className="mt-0.5 text-red-950 font-normal">{requirement.document?.feedback || 'Documento no aprobado. Por favor corrige y vuelve a subir.'}</p>
             </div>
           </div>
@@ -789,7 +1026,7 @@ function DocumentRow({
 }
 
 function AdminView() {
-  const [activeTab, setActiveTab] = useState<'expedients' | 'recent' | 'manual'>('expedients');
+  const [activeTab, setActiveTab] = useState<'expedients' | 'catalog' | 'manual' | 'recent'>('expedients');
   const [summary, setSummary] = useState<AdminSummary | null>(null);
   const [recentDocuments, setRecentDocuments] = useState<AdminDocument[]>([]);
   const [error, setError] = useState('');
@@ -804,6 +1041,12 @@ function AdminView() {
   const [searchStudent, setSearchStudent] = useState('');
   const [loadingExpedients, setLoadingExpedients] = useState(false);
   const [selectedExpedient, setSelectedExpedient] = useState<AdminExpedient | null>(null);
+
+  // Catálogo Publicado State (Admin)
+  const [catalogEntries, setCatalogEntries] = useState<AdminCatalogEntry[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogMessage, setCatalogMessage] = useState('');
 
   // Reviewing single document state
   const [reviewingDocId, setReviewingDocId] = useState<number | null>(null);
@@ -864,9 +1107,47 @@ function AdminView() {
     }
   }
 
+  async function fetchCatalogEntries() {
+    setCatalogLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (catalogSearch.trim()) params.set('search', catalogSearch.trim());
+      const data = await request<{ entries: AdminCatalogEntry[] }>(`/admin/repository/entries?${params}`);
+      setCatalogEntries(data.entries);
+    } catch {
+      setCatalogMessage('No se pudieron cargar las fichas del catálogo.');
+    } finally {
+      setCatalogLoading(false);
+    }
+  }
+
+  async function handleDeleteEntry(id: number) {
+    if (!window.confirm('¿Seguro que deseas eliminar esta ficha del catálogo público? El archivo también se borrará.')) {
+      return;
+    }
+    try {
+      await request(`/admin/repository/entries/${id}`, { method: 'DELETE' });
+      setCatalogMessage('Ficha eliminada del catálogo exitosamente.');
+      await fetchCatalogEntries();
+      await loadSummaryAndRecent();
+    } catch {
+      setCatalogMessage('No fue posible eliminar la publicación.');
+    }
+  }
+
+  async function handleTogglePublish(id: number) {
+    try {
+      await request(`/admin/repository/entries/${id}/toggle`, { method: 'PATCH' });
+      await fetchCatalogEntries();
+    } catch {
+      setCatalogMessage('Error al cambiar visibilidad.');
+    }
+  }
+
   useEffect(() => {
     void loadSummaryAndRecent();
     void fetchExpedients();
+    void fetchCatalogEntries();
   }, []);
 
   async function handleReview(docId: number, status: 'Aprobado' | 'Rechazado' | 'En revisión', feedback?: string) {
@@ -914,6 +1195,7 @@ function AdminView() {
       setPublishFormTitle('');
       setPublishFormDesc('');
       await loadSummaryAndRecent();
+      await fetchCatalogEntries();
     } catch (err: any) {
       setPublishMessage(err.message || 'Error al publicar la ficha.');
     } finally {
@@ -927,15 +1209,16 @@ function AdminView() {
     setManualPublishMessage('');
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    const payload = Object.fromEntries(form.entries());
 
     try {
       await request('/admin/repository/entries', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: form,
       });
       formElement.reset();
-      setManualPublishMessage('Ficha publicada; ya aparece en el buscador público.');
+      setManualPublishMessage('Ficha publicada con éxito; ya aparece en el buscador público.');
+      await fetchCatalogEntries();
+      await loadSummaryAndRecent();
     } catch {
       setManualPublishMessage('No se pudo publicar. Revisa los campos e intenta otra vez.');
     } finally {
@@ -943,7 +1226,6 @@ function AdminView() {
     }
   }
 
-  // Set default title for direct publish when selecting an expedient
   useEffect(() => {
     if (selectedExpedient) {
       const report = selectedExpedient.requirements.find(
@@ -969,23 +1251,23 @@ function AdminView() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Administración de Residencias</h1>
           <p className="text-sm text-[var(--palette-a-80)]">
-            Supervisión de expedientes, revisión documental y publicación en el catálogo abierto.
+            Supervisión académica de expedientes, auditoría de requisitos y preservación en catálogo público.
           </p>
         </div>
       </div>
 
       {summary && (
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <Summary label="Alumnos activos" value={summary.active_students} />
-          <Summary label="Documentos subidos" value={summary.uploaded_documents} />
-          <Summary label="Documentos en revisión" value={summary.documents_under_review} />
+          <Summary label="Alumnos con expediente" value={summary.active_students} />
+          <Summary label="Documentos resguardados" value={summary.uploaded_documents} />
+          <Summary label="Documentos pendientes de revisión" value={summary.documents_under_review} />
         </div>
       )}
 
       {error && <p className="mt-4 rounded bg-red-50 p-3 text-sm text-[var(--palette-d)]">{error}</p>}
 
       {/* Navegación por pestañas */}
-      <div className="mt-8 flex gap-2 border-b border-[var(--palette-f-60)]">
+      <div className="mt-8 flex flex-wrap gap-2 border-b border-[var(--palette-f-60)]">
         <button
           type="button"
           onClick={() => { setActiveTab('expedients'); setSelectedExpedient(null); }}
@@ -1001,15 +1283,15 @@ function AdminView() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('recent')}
+          onClick={() => { setActiveTab('catalog'); void fetchCatalogEntries(); }}
           className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-            activeTab === 'recent'
+            activeTab === 'catalog'
               ? 'border-[var(--brand-red-100)] text-[var(--brand-red-100)]'
               : 'border-transparent text-[var(--palette-a-80)] hover:text-[var(--palette-a)]'
           }`}
         >
-          <Clock className="h-4 w-4" />
-          Documentos Recientes
+          <Globe className="h-4 w-4" />
+          Catálogo Publicado ({catalogEntries.length})
         </button>
 
         <button
@@ -1024,12 +1306,24 @@ function AdminView() {
           <Upload className="h-4 w-4" />
           Publicación Manual
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('recent')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+            activeTab === 'recent'
+              ? 'border-[var(--brand-red-100)] text-[var(--brand-red-100)]'
+              : 'border-transparent text-[var(--palette-a-80)] hover:text-[var(--palette-a)]'
+          }`}
+        >
+          <Clock className="h-4 w-4" />
+          Auditoría de Documentos
+        </button>
       </div>
 
       {/* PESTAÑA 1: EXPEDIENTES POR PERIODO */}
       {activeTab === 'expedients' && (
         <div className="mt-6">
-          {/* DETALLE DE UN EXPEDIENTE SELECCIONADO */}
           {selectedExpedient ? (
             <div className="space-y-6">
               <button
@@ -1041,7 +1335,7 @@ function AdminView() {
                 Volver a la lista de expedientes
               </button>
 
-              <div className="rounded-lg border border-[var(--palette-f-60)] bg-white p-6 shadow-sm">
+              <div className="rounded-lg border border-[var(--palette-f-60)] bg-white p-6 shadow-xs">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                   <div>
                     <span className="inline-block rounded bg-[var(--brand-red-20)] px-2.5 py-0.5 text-xs font-bold uppercase text-[var(--brand-red-100)]">
@@ -1057,7 +1351,7 @@ function AdminView() {
                       Progreso: {selectedExpedient.completed} de {selectedExpedient.total} entregados
                     </div>
                     <div className="text-xs font-semibold text-emerald-700">
-                      {selectedExpedient.approved} aprobados
+                      {selectedExpedient.approved} requisitos aprobados
                     </div>
                     <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-[var(--palette-f-60)]">
                       <div
@@ -1082,9 +1376,9 @@ function AdminView() {
               )}
 
               {/* CHECKLIST DE REVISIÓN */}
-              <div className="overflow-hidden rounded-lg border border-[var(--palette-f-60)] bg-white">
+              <div className="overflow-hidden rounded-lg border border-[var(--palette-f-60)] bg-white shadow-xs">
                 <div className="border-b border-[var(--palette-f-60)] bg-[var(--palette-f-20)] px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--palette-a-80)]">
-                  Checklist de Documentos del Alumno (Modo Revisión)
+                  Checklist de Documentos del Alumno (Modo Auditoría / Calificación)
                 </div>
 
                 <div className="divide-y divide-[var(--palette-f-60)]">
@@ -1132,10 +1426,8 @@ function AdminView() {
                             )}
                           </div>
 
-                          {/* ACCIONES DE REVISIÓN */}
                           {doc && (
                             <div className="flex flex-wrap items-center gap-2">
-                              {/* Estatus Pill */}
                               {isDocApproved && (
                                 <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
                                   Aprobado
@@ -1152,17 +1444,15 @@ function AdminView() {
                                 </span>
                               )}
 
-                              {/* Botón Ver */}
                               <button
                                 type="button"
                                 onClick={() => void downloadPrivateFile(doc.file_url, `${req.title}.${req.extensions[0]}`)}
                                 className="flex items-center gap-1 rounded border border-[var(--palette-f-60)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--palette-a)] hover:bg-[var(--palette-f-20)]"
                               >
                                 <Eye className="h-3.5 w-3.5" />
-                                Descargar
+                                Ver Archivo
                               </button>
 
-                              {/* Botón Aprobar */}
                               {!isDocApproved && (
                                 <button
                                   type="button"
@@ -1174,7 +1464,6 @@ function AdminView() {
                                 </button>
                               )}
 
-                              {/* Botón Rechazar */}
                               <button
                                 type="button"
                                 disabled={reviewingDocId === doc.id}
@@ -1194,7 +1483,6 @@ function AdminView() {
                           )}
                         </div>
 
-                        {/* CAJA DESPLEGABLE PARA MOTIVO DE RECHAZO */}
                         {rejectingDocId === doc?.id && (
                           <div className="mt-3 rounded-lg border border-red-200 bg-red-50/70 p-3">
                             <label className="block text-xs font-semibold text-red-900">
@@ -1238,15 +1526,15 @@ function AdminView() {
                 <div className="rounded-lg border-2 border-emerald-500 bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-2 text-base font-bold text-emerald-900">
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                    Publicar Informe en el Repositorio Institucional (Acceso Abierto)
+                    Publicar Informe en el Catálogo Público (Acceso Abierto)
                   </div>
                   <p className="mt-1 text-xs text-slate-600">
-                    El informe técnico de esta residencia ha sido <strong>aprobado</strong>. Completa la ficha de metadatos para difundirla en el catálogo público.
+                    El informe técnico está <strong>aprobado</strong>. Al presionar el botón se vinculará el archivo PDF al catálogo y estará disponible para descarga pública.
                   </p>
 
                   <form onSubmit={handlePublishApprovedReport} className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="text-xs font-semibold sm:col-span-2">
-                      Título de la Residencia
+                      Título Oficial de la Residencia
                       <input
                         required
                         value={publishFormTitle}
@@ -1274,7 +1562,7 @@ function AdminView() {
                     </label>
 
                     <label className="text-xs font-semibold sm:col-span-2">
-                      Resumen / Descripción
+                      Resumen Ejecutivo / Metadatos
                       <textarea
                         value={publishFormDesc}
                         onChange={(e) => setPublishFormDesc(e.target.value)}
@@ -1289,7 +1577,7 @@ function AdminView() {
                         disabled={publishing}
                         className="rounded bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
                       >
-                        {publishing ? 'Publicando en Catálogo...' : 'Publicar Ficha en Repositorio Público'}
+                        {publishing ? 'Publicando en Catálogo...' : 'Publicar Ficha con PDF en el Repositorio'}
                       </button>
                       {publishMessage && (
                         <span className="text-xs font-semibold text-emerald-800">{publishMessage}</span>
@@ -1304,7 +1592,7 @@ function AdminView() {
                     <div>
                       <p className="font-semibold">Publicación en repositorio no disponible aún</p>
                       <p className="mt-0.5 text-amber-800">
-                        Para publicar esta residencia en el catálogo público, primero debes revisar y marcar como <strong>Aprobado</strong> el requisito del <em>Informe técnico de residencia (Word o PDF)</em>.
+                        Para publicar esta residencia en el catálogo público, primero debes marcar como <strong>Aprobado</strong> el <em>Informe técnico de residencia (Word o PDF)</em>.
                       </p>
                     </div>
                   </div>
@@ -1314,8 +1602,7 @@ function AdminView() {
           ) : (
             /* LISTA DE EXPEDIENTES CON FILTROS */
             <div className="space-y-6">
-              {/* Barra de Filtros */}
-              <div className="grid gap-3 rounded-lg border border-[var(--palette-f-60)] bg-white p-4 sm:grid-cols-2 md:grid-cols-4">
+              <div className="grid gap-3 rounded-lg border border-[var(--palette-f-60)] bg-white p-4 shadow-xs sm:grid-cols-2 md:grid-cols-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--palette-a-80)]">Carrera</label>
                   <select
@@ -1389,8 +1676,7 @@ function AdminView() {
                 </div>
               </div>
 
-              {/* Tabla de Expedientes */}
-              <div className="overflow-x-auto rounded-lg border border-[var(--palette-f-60)] bg-white shadow-sm">
+              <div className="overflow-x-auto rounded-lg border border-[var(--palette-f-60)] bg-white shadow-xs">
                 <table className="w-full min-w-[700px] text-sm">
                   <thead className="bg-[var(--palette-f-20)] text-left text-xs uppercase text-[var(--palette-a-80)]">
                     <tr>
@@ -1464,7 +1750,7 @@ function AdminView() {
                             onClick={() => setSelectedExpedient(exp)}
                             className="inline-flex items-center gap-1 rounded border border-[var(--brand-red-100)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--brand-red-100)] hover:bg-[var(--brand-red-20)]"
                           >
-                            Revisar expediente
+                            Auditar expediente
                             <ChevronRight className="h-3.5 w-3.5" />
                           </button>
                         </td>
@@ -1478,9 +1764,177 @@ function AdminView() {
         </div>
       )}
 
-      {/* PESTAÑA 2: DOCUMENTOS RECIENTES */}
+      {/* PESTAÑA 2: CATÁLOGO PUBLICADO (NUEVA GESTIÓN TOTAL) */}
+      {activeTab === 'catalog' && (
+        <div className="mt-6 space-y-4">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <h2 className="text-base font-bold text-slate-900">
+              Control de Publicaciones en el Repositorio Abierto
+            </h2>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Buscar por título, autor o carrera..."
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchCatalogEntries()}
+                className="rounded border border-slate-300 bg-white px-3 py-1.5 text-xs w-64 shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={fetchCatalogEntries}
+                className="rounded bg-[var(--brand-red-100)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--brand-red-80)]"
+              >
+                Buscar
+              </button>
+            </div>
+          </div>
+
+          {catalogMessage && (
+            <div className="rounded bg-blue-50 p-2.5 text-xs font-medium text-blue-800">
+              {catalogMessage}
+            </div>
+          )}
+
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 uppercase text-slate-600 font-semibold">
+                <tr>
+                  <th className="px-4 py-3">Título de la Residencia</th>
+                  <th className="px-4 py-3">Autor & Carrera</th>
+                  <th className="px-4 py-3">Año</th>
+                  <th className="px-4 py-3">Archivo PDF</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {catalogLoading && (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-slate-500">
+                      Cargando publicaciones...
+                    </td>
+                  </tr>
+                )}
+                {!catalogLoading && catalogEntries.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-slate-500">
+                      No hay residencias publicadas aún.
+                    </td>
+                  </tr>
+                )}
+                {!catalogLoading && catalogEntries.map((entry) => (
+                  <tr key={entry.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-semibold text-slate-900 max-w-xs truncate">
+                      {entry.title}
+                      <div className="text-[10px] font-mono font-normal text-slate-400">UUID: {entry.identifier}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      <div className="font-medium">{entry.author || 'Sin autor'}</div>
+                      <div className="text-[11px] text-slate-500">{entry.career}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{entry.year}</td>
+                    <td className="px-4 py-3">
+                      {entry.file_url ? (
+                        <a
+                          href={entry.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50"
+                        >
+                          <Download className="h-3 w-3" /> Descargar
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">Sin archivo</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        entry.published ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {entry.published ? 'Publicado' : 'Oculto'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePublish(entry.id)}
+                          className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                          {entry.published ? 'Ocultar' : 'Publicar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEntry(entry.id)}
+                          className="rounded border border-red-200 bg-white p-1 text-red-600 hover:bg-red-50"
+                          title="Eliminar publicación"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 3: PUBLICACIÓN MANUAL (CON CARGA DE ARCHIVO PDF) */}
+      {activeTab === 'manual' && (
+        <form onSubmit={handleManualPublish} className="mt-6 grid gap-4 rounded-lg border border-[var(--palette-f-60)] bg-white p-6 shadow-xs md:grid-cols-2">
+          <h2 className="text-base font-semibold md:col-span-2">Registrar Ficha Directa en el Repositorio</h2>
+          <label className="text-xs font-semibold md:col-span-2">
+            Título de la Residencia
+            <input name="title" required maxLength={200} placeholder="Ej. Automatización del Proceso de Selección de Aguacate..." className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
+          </label>
+          <input type="hidden" name="type" value="Residencia" />
+          
+          <label className="text-xs font-semibold">
+            Autor(es)
+            <input name="author" maxLength={200} placeholder="Ej. Ing. Juan Pérez García" className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
+          </label>
+
+          <label className="text-xs font-semibold">
+            Carrera
+            <input name="career" maxLength={120} placeholder="Ej. Ingeniería en Sistemas Computacionales" className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
+          </label>
+
+          <label className="text-xs font-semibold">
+            Institución / Empresa
+            <input name="institution" maxLength={180} defaultValue="TecNM Campus La Huerta" className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
+          </label>
+
+          <label className="text-xs font-semibold">
+            Año de Realización
+            <input name="year" type="number" min="1990" max="2100" defaultValue={new Date().getFullYear()} required className="mt-1 block w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
+          </label>
+
+          <label className="text-xs font-semibold md:col-span-2">
+            Adjuntar Informe Técnico Completo (PDF o Word)
+            <input type="file" name="file" accept=".pdf,.docx" className="mt-1 block w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[var(--brand-red-20)] file:text-[var(--brand-red-100)] hover:file:bg-[var(--brand-red-40)]" />
+          </label>
+
+          <label className="text-xs font-semibold md:col-span-2">
+            Resumen / Descripción
+            <textarea name="description" maxLength={5000} placeholder="Resumen del trabajo, metodología y aportaciones..." className="mt-1 block min-h-24 w-full rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
+          </label>
+
+          <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+            <button disabled={manualPublishing} className="rounded bg-[var(--brand-red-100)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-red-80)] disabled:opacity-60">
+              {manualPublishing ? 'Publicando...' : 'Publicar en Repositorio'}
+            </button>
+            {manualPublishMessage && <p role="status" className="text-xs font-semibold text-emerald-800">{manualPublishMessage}</p>}
+          </div>
+        </form>
+      )}
+
+      {/* PESTAÑA 4: AUDITORÍA DE DOCUMENTOS */}
       {activeTab === 'recent' && (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--palette-f-60)] bg-white shadow-sm">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--palette-f-60)] bg-white shadow-xs">
           <table className="w-full min-w-[650px] text-sm">
             <thead className="bg-[var(--palette-f-20)] text-left text-xs uppercase text-[var(--palette-a-80)]">
               <tr>
@@ -1513,27 +1967,6 @@ function AdminView() {
           </table>
         </div>
       )}
-
-      {/* PESTAÑA 3: PUBLICACIÓN MANUAL */}
-      {activeTab === 'manual' && (
-        <form onSubmit={handleManualPublish} className="mt-6 grid gap-3 rounded-lg border border-[var(--palette-f-60)] bg-white p-6 shadow-sm md:grid-cols-2">
-          <h2 className="text-base font-semibold md:col-span-2">Publicar ficha manualmente en el catálogo</h2>
-          <input name="title" required maxLength={200} placeholder="Título" className="rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
-          <input type="hidden" name="type" value="Residencia" />
-          <p className="rounded border border-[var(--palette-f-60)] bg-[var(--palette-f-20)] px-3 py-2 text-sm">Tipo: Residencia profesional</p>
-          <input name="author" maxLength={200} placeholder="Autor (opcional)" className="rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
-          <input name="career" maxLength={120} placeholder="Carrera (opcional)" className="rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
-          <input name="institution" maxLength={180} placeholder="Institución (opcional)" className="rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
-          <input name="year" type="number" min="1900" max="2100" required placeholder="Año" className="rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm" />
-          <textarea name="description" maxLength={5000} placeholder="Resumen / descripción (opcional)" className="min-h-20 rounded border border-[var(--palette-f-60)] px-3 py-2 text-sm md:col-span-2" />
-          <div className="flex flex-wrap items-center gap-3 md:col-span-2">
-            <button disabled={manualPublishing} className="rounded bg-[var(--brand-red-100)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--brand-red-80)] disabled:opacity-60">
-              {manualPublishing ? 'Publicando...' : 'Publicar ficha'}
-            </button>
-            {manualPublishMessage && <p role="status" className="text-sm text-[var(--palette-a-80)]">{manualPublishMessage}</p>}
-          </div>
-        </form>
-      )}
     </main>
   );
 }
@@ -1546,7 +1979,7 @@ function Summary({
   value: number;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--palette-f-60)] bg-white p-4">
+    <div className="rounded-lg border border-[var(--palette-f-60)] bg-white p-4 shadow-xs">
       <div className="text-2xl font-bold text-[var(--brand-red-100)]">{value}</div>
       <div className="text-xs text-[var(--palette-a-80)]">{label}</div>
     </div>
