@@ -89,7 +89,7 @@ class RepositoryAndDocumentsTest extends TestCase
 
         $this->actingAs($student, 'sanctum')
             ->postJson('/api/student/expedients', [
-                'career_code' => 'IIND',
+                'career_code' => 'LA',
                 'period_name' => 'Ago-Dic',
                 'year' => now()->year,
             ])
@@ -126,7 +126,9 @@ class RepositoryAndDocumentsTest extends TestCase
             ->assertJsonPath('careers.ISC', 'Ingeniería en Sistemas Computacionales')
             ->assertJsonPath('careers.IIA', 'Ingeniería en Industrias Alimentarias')
             ->assertJsonPath('careers.ARQ', 'Arquitectura')
-            ->assertJsonPath('careers.IADM', 'Ingeniería en Administración')
-            ->assertJsonPath('careers.COPU', 'Contador Público');
+            ->assertJsonPath('careers.LA', 'Licenciatura en Administración')
+            ->assertJsonPath('careers.LCP', 'Licenciatura en Contador Público')
+            ->assertJsonMissingPath('careers.IIND')
+            ->assertJsonMissingPath('careers.ICIV');
     }
 }

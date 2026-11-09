@@ -56,9 +56,9 @@ export const Landing: React.FC<LandingProps> = ({ openAuth }) => {
   const [activeCategory, setActiveCategory] = useState<GalleryCategory>('all');
   const categories: { id: GalleryCategory; label: string }[] = [
     { id: 'all', label: 'Todas' },
-    { id: 'ing', label: 'Ingeniería Industrial' },
-    { id: 'gas', label: 'Gastronomía' },
-    { id: 'adm', label: 'Administración' },
+    { id: 'ing', label: 'Ingeniería en Sistemas Computacionales' },
+    { id: 'gas', label: 'Ingeniería en Industrias Alimentarias' },
+    { id: 'adm', label: 'Arquitectura' },
   ];
 
   useEffect(() => {
@@ -145,9 +145,11 @@ export const Landing: React.FC<LandingProps> = ({ openAuth }) => {
             <h2 className="section-title">Carreras en esta sede</h2>
             <p className="section-sub">La oferta educativa disponible en TSJ La Huerta.</p>
             <div className="carousel">
-              <article className="card"><div className="img course-ing" /><div className="body"><h3>Ingeniería Industrial</h3><span className="badge">4.5 años</span><span className="badge">Presencial</span></div></article>
-              <article className="card"><div className="img course-gas" /><div className="body"><h3>Gastronomía</h3><span className="badge">4 años</span><span className="badge">Presencial</span></div></article>
-              <article className="card"><div className="img course-adm" /><div className="body"><h3>Administración</h3><span className="badge">4 años</span><span className="badge">Híbrida</span></div></article>
+              <article className="card"><div className="img course-ing" /><div className="body"><h3>Ingeniería en Sistemas Computacionales</h3><span className="badge">4.5 años</span><span className="badge">Presencial</span></div></article>
+              <article className="card"><div className="img course-gas" /><div className="body"><h3>Ingeniería en Industrias Alimentarias</h3><span className="badge">4.5 años</span><span className="badge">Presencial</span></div></article>
+              <article className="card"><div className="img course-adm" /><div className="body"><h3>Arquitectura</h3><span className="badge">5 años</span><span className="badge">Presencial</span></div></article>
+              <article className="card"><div className="img course-adm" /><div className="body"><h3>Licenciatura en Administración</h3><span className="badge">4.5 años</span><span className="badge">Presencial</span></div></article>
+              <article className="card"><div className="img course-ing" /><div className="body"><h3>Licenciatura en Contador Público</h3><span className="badge">4.5 años</span><span className="badge">Presencial</span></div></article>
             </div>
           </div>
         </section>
@@ -165,7 +167,7 @@ export const Landing: React.FC<LandingProps> = ({ openAuth }) => {
         <section className="landing-section"><div className="landing-wrap"><h2 className="section-title">Esta sede en números</h2><div className="stats-panel"><div className="stats-grid"><div className="stat"><div className="num">4,200</div><div className="label">Estudiantes en esta sede</div></div><div className="stat"><div className="num">92%</div><div className="label">Empleabilidad local</div></div><div className="stat"><div className="num">35</div><div className="label">Empresas aliadas en la región</div></div></div></div></div></section>
       </main>
 
-      <footer className="landing-footer"><div className="landing-wrap"><div className="footer-byadges"><span>RVOE vigente</span><span>Miembro del Sistema Tecnológico</span><span>Educación Jalisco</span></div><div className="footer-content"><div className="footer-col"><div className="landing-logo">TSJ <span className="landing-tag">La Huerta</span></div><p>Instituto Tecnológico Superior de Jalisco, plantel La Huerta.</p></div><div className="footer-col"><h4>Programas</h4><p>Ingeniería Industrial<br />Gastronomía<br />Administración</p></div><div className="footer-col"><h4>Admisión</h4><p>Proceso<br />Becas<br />Preguntas frecuentes</p></div><div className="footer-col"><h4>Contacto</h4><p>Av. Tecnológico s/n, La Huerta, Jalisco.</p></div></div><div className="footer-bottom">© 2027 TSJ La Huerta, parte del Sistema Tecnológico Estatal</div></div></footer>
+      <footer className="landing-footer"><div className="landing-wrap"><div className="footer-byadges"><span>RVOE vigente</span><span>Miembro del Sistema Tecnológico</span><span>Educación Jalisco</span></div><div className="footer-content"><div className="footer-col"><div className="landing-logo">TSJ <span className="landing-tag">La Huerta</span></div><p>Instituto Tecnológico Superior de Jalisco, plantel La Huerta.</p></div><div className="footer-col"><h4>Programas</h4><p>Ing. en Sistemas Computacionales<br />Ing. en Industrias Alimentarias<br />Arquitectura<br />Lic. en Administración<br />Lic. en Contador Público</p></div><div className="footer-col"><h4>Admisión</h4><p>Proceso<br />Becas<br />Preguntas frecuentes</p></div><div className="footer-col"><h4>Contacto</h4><p>Av. Tecnológico s/n, La Huerta, Jalisco.</p></div></div><div className="footer-bottom">© 2027 TSJ La Huerta, parte del Sistema Tecnológico Estatal</div></div></footer>
     </div>
   );
 };
